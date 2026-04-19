@@ -1,4 +1,5 @@
 using dnlib.DotNet;
+using dnlib.DotNet.MD;
 
 namespace dnSpy.Extension.MalwareMCP.Utils;
 
@@ -12,15 +13,17 @@ static class TokenResolver
     public static string? ResolveToken(ModuleDef module, uint token)
     {
         var mdToken = new MDToken(token);
+        var md = module as ModuleDefMD;
+        if (md == null) return $"Unknown(0x{token:X8})";
         return mdToken.Table switch
         {
-            Table.TypeDef => module.ResolveTypeDef(mdToken.Rid)?.FullName,
-            Table.TypeRef => module.ResolveTypeRef(mdToken.Rid)?.FullName,
-            Table.Method => module.ResolveMethod(mdToken.Rid)?.FullName,
-            Table.Field => module.ResolveField(mdToken.Rid)?.FullName,
-            Table.MemberRef => module.ResolveMemberRef(mdToken.Rid)?.FullName,
-            Table.TypeSpec => module.ResolveTypeSpec(mdToken.Rid)?.FullName,
-            Table.MethodSpec => module.ResolveMethodSpec(mdToken.Rid)?.FullName,
+            Table.TypeDef => md.ResolveTypeDef(mdToken.Rid)?.FullName,
+            Table.TypeRef => md.ResolveTypeRef(mdToken.Rid)?.FullName,
+            Table.Method => md.ResolveMethod(mdToken.Rid)?.FullName,
+            Table.Field => md.ResolveField(mdToken.Rid)?.FullName,
+            Table.MemberRef => md.ResolveMemberRef(mdToken.Rid)?.FullName,
+            Table.TypeSpec => md.ResolveTypeSpec(mdToken.Rid)?.FullName,
+            Table.MethodSpec => md.ResolveMethodSpec(mdToken.Rid)?.FullName,
             Table.StandAloneSig => $"StandAloneSig(0x{token:X8})",
             _ => $"Unknown(0x{token:X8})",
         };

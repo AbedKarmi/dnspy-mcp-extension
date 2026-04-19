@@ -285,7 +285,13 @@ public static class ObfuscationTools
                             .Where(i => i != lastNonNop && i != secondLast && i.OpCode != OpCodes.Nop)
                             .All(i => i.OpCode.Name.StartsWith("ldarg"));
 
-                        if (allArgsLoaded)
+                        // Skip compiler-generated default instance constructors
+                        // (they always chain to their base class .ctor — not a proxy).
+                        bool isTrivialDefaultCtor = method.IsConstructor && !method.IsStatic &&
+                            method.Parameters.Count == 1 && // just "this"
+                            target.Name == ".ctor";
+
+                        if (allArgsLoaded && !isTrivialDefaultCtor)
                         {
                             proxyMethods.Add(new
                             {
@@ -307,7 +313,7 @@ public static class ObfuscationTools
                 var ftName = field.FieldType.FullName ?? "";
 
                 // Check if field type is a delegate (derives from MulticastDelegate)
-                var fieldTypeDef = field.FieldType.ResolveTypeDef();
+                var fieldTypeDef = field.FieldType.ToTypeDefOrRef()?.ResolveTypeDef();
                 bool isDelegate = fieldTypeDef?.BaseType?.FullName == "System.MulticastDelegate" ||
                                   ftName.Contains("Action") || ftName.Contains("Func") ||
                                   ftName.Contains("Delegate");

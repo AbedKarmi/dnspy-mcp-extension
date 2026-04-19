@@ -94,21 +94,21 @@ static class Patterns
                 emails.Add(m.Value);
         }
 
-        // Scan #US heap strings
-        var us = module.USStream;
+        // Scan #US heap strings (walk blob-encoded stream with correct advance)
+        var us = (module as ModuleDefMD)?.USStream;
         if (us != null)
         {
-            uint offset = 1;
-            while (offset < us.StreamLength)
+            var reader = us.CreateReader();
+            reader.Position = 1;
+            while (reader.Position < reader.Length)
             {
-                try
-                {
-                    var s = us.ReadNoRid(offset);
-                    if (s != null && s.Length >= 4)
-                        ScanString(s);
-                    offset += (uint)(s?.Length * 2 ?? 2) + 3;
-                }
-                catch { offset++; }
+                if (!reader.TryReadCompressedUInt32(out uint blobLen)) break;
+                if (blobLen == 0) continue;
+                if (reader.Position + blobLen > reader.Length) break;
+                byte[] bytes = reader.ReadBytes((int)(blobLen - 1));
+                reader.ReadByte(); // terminator
+                var s = System.Text.Encoding.Unicode.GetString(bytes);
+                if (s.Length >= 4) ScanString(s);
             }
         }
 

@@ -53,13 +53,22 @@ public static class ResourceTools
         [Description("Resource name")] string resource_name,
         [Description("Max bytes to extract (default 65536)")] int max_bytes = 65536)
     {
-        var module = bridge.FindModule(assembly_name)
-            ?? throw new ArgumentException($"Assembly not found: {assembly_name}");
+        var module = bridge.FindModule(assembly_name);
+        if (module == null)
+            return new { error = $"Assembly not found: {assembly_name}", resource_name };
 
-        var resource = module.Resources?
-            .OfType<EmbeddedResource>()
-            .FirstOrDefault(r => r.Name?.String == resource_name)
-            ?? throw new ArgumentException($"Embedded resource not found: {resource_name}");
+        var embedded = module.Resources?.OfType<EmbeddedResource>().ToList() ?? new List<EmbeddedResource>();
+        if (embedded.Count == 0)
+            return new { error = "Assembly has no embedded resources", assembly = assembly_name, resource_name };
+
+        var resource = embedded.FirstOrDefault(r => r.Name?.String == resource_name);
+        if (resource == null)
+            return new
+            {
+                error = $"Embedded resource not found: {resource_name}",
+                assembly = assembly_name,
+                available = embedded.Select(r => r.Name?.String).ToList(),
+            };
 
         var data = resource.CreateReader().ToArray();
         var extractSize = Math.Min(data.Length, max_bytes);

@@ -1,5 +1,6 @@
 using ModelContextProtocol.Server;
 using System.ComponentModel;
+using System.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
 
@@ -42,7 +43,7 @@ public static class SaveTools
         try
         {
             // Use appropriate writer options
-            if (module.IsILOnly)
+            if (module.IsILOnly || module is not ModuleDefMD md)
             {
                 var options = new ModuleWriterOptions(module);
                 options.MetadataOptions.Flags |= MetadataFlags.PreserveAll;
@@ -50,9 +51,9 @@ public static class SaveTools
             }
             else
             {
-                var options = new NativeModuleWriterOptions(module, false);
+                var options = new NativeModuleWriterOptions(md, optimizeImageSize: false);
                 options.MetadataOptions.Flags |= MetadataFlags.PreserveAll;
-                module.NativeWrite(output_path, options);
+                md.NativeWrite(output_path, options);
             }
 
             var fileInfo = new FileInfo(output_path);

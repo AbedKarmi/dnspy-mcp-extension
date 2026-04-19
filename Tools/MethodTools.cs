@@ -33,9 +33,10 @@ public static class MethodTools
         [Description("Assembly filename")] string assembly_name,
         [Description("Full method name (e.g., 'Stealer.Config::Decrypt')")] string method_full_name)
     {
-        var (type, method) = ResolveMethod(bridge, assembly_name, method_full_name);
-        var source = bridge.DecompileMethod(method);
-        return new { method_full_name = method.FullName, language = "C#", source_code = source };
+        if (!TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+            return new { error = err, method_full_name };
+        var source = bridge.DecompileMethod(method!);
+        return new { method_full_name = method!.FullName, language = "C#", source_code = source };
     }
 
     /// <summary>Get CIL/IL disassembly of a method</summary>
@@ -45,7 +46,9 @@ public static class MethodTools
         [Description("Assembly filename")] string assembly_name,
         [Description("Full method name")] string method_full_name)
     {
-        var (type, method) = ResolveMethod(bridge, assembly_name, method_full_name);
+        if (!TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var methodOpt, out var err))
+            return new { error = err, method_full_name };
+        var method = methodOpt!;
 
         if (!method.HasBody)
             return new { error = "Method has no body (abstract/extern/pinvoke)" };
@@ -87,27 +90,44 @@ public static class MethodTools
     /// <summary>Resolve "TypeName::MethodName" to (TypeDef, MethodDef)</summary>
     internal static (TypeDef, MethodDef) ResolveMethod(DnSpyBridge bridge, string asmName, string fullName)
     {
-        var module = bridge.FindModule(asmName)
-            ?? throw new ArgumentException($"Assembly not found: {asmName}");
+        if (!TryResolveMethod(bridge, asmName, fullName, out var type, out var method, out var err))
+            throw new ArgumentException(err);
+        return (type!, method!);
+    }
 
-        // Try "Type::Method" format
+    /// <summary>Non-throwing resolver — returns false + error message when the target can't be found.</summary>
+    internal static bool TryResolveMethod(
+        DnSpyBridge bridge, string asmName, string fullName,
+        out TypeDef? type, out MethodDef? method, out string? error)
+    {
+        type = null;
+        method = null;
+        error = null;
+
+        var module = bridge.FindModule(asmName);
+        if (module == null) { error = $"Assembly not found: {asmName}"; return false; }
+
         var parts = fullName.Split("::", 2);
         if (parts.Length == 2)
         {
-            var type = module.GetTypes().FirstOrDefault(t => t.FullName == parts[0])
-                ?? throw new ArgumentException($"Type not found: {parts[0]}");
-            var method = type.Methods.FirstOrDefault(m => m.Name == parts[1])
-                ?? throw new ArgumentException($"Method not found: {parts[1]} in {parts[0]}");
-            return (type, method);
+            type = module.GetTypes().FirstOrDefault(t => t.FullName == parts[0]);
+            if (type == null) { error = $"Type not found: {parts[0]}"; return false; }
+            method = type.Methods.FirstOrDefault(m => m.Name == parts[1] || m.FullName == fullName);
+            if (method == null) { error = $"Method not found: {parts[1]} in {parts[0]}"; return false; }
+            return true;
         }
 
-        // Try finding by full method name across all types
         foreach (var t in module.GetTypes())
             foreach (var m in t.Methods)
                 if (m.FullName == fullName || m.Name == fullName)
-                    return (t, m);
+                {
+                    type = t;
+                    method = m;
+                    return true;
+                }
 
-        throw new ArgumentException($"Method not found: {fullName}");
+        error = $"Method not found: {fullName}";
+        return false;
     }
 
     internal static string FormatOperand(Instruction instr)

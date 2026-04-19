@@ -7,7 +7,7 @@ using dnlib.DotNet;
 
 namespace dnSpy.Extension.MalwareMCP;
 
-sealed class DnSpyBridge
+public sealed class DnSpyBridge
 {
     public IDocumentTreeView TreeView { get; }
     public IDsDocumentService DocumentService { get; }
@@ -62,8 +62,8 @@ sealed class DnSpyBridge
     {
         return GetLoadedModules()
             .FirstOrDefault(m =>
-                m.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
-                m.Location.EndsWith(name, StringComparison.OrdinalIgnoreCase));
+                string.Equals(m.Name?.String, name, StringComparison.OrdinalIgnoreCase) ||
+                (m.Location ?? "").EndsWith(name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Decompile a type to C# using dnSpy's built-in ILSpy engine</summary>
