@@ -19,9 +19,9 @@ public static class IlEditTools
         [Description("Full method name (Type::Method)")] string method_full_name,
         [Description("Must be true to execute")] bool confirm = false)
     {
-        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err) || method == null)
             return new { error = err };
-        var m = method!;
+        var m = method;
         if (!m.HasBody)
             return new { error = "Method has no body (abstract/extern/pinvoke)" };
         if (!confirm)
@@ -48,9 +48,9 @@ public static class IlEditTools
         [Description("Value to return")] bool value,
         [Description("Must be true to execute")] bool confirm = false)
     {
-        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err) || method == null)
             return new { error = err };
-        var m = method!;
+        var m = method;
         if (!m.HasBody)
             return new { error = "Method has no body" };
         var rt = m.ReturnType?.FullName;
@@ -79,9 +79,9 @@ public static class IlEditTools
         [Description("Full method name (Type::Method)")] string method_full_name,
         [Description("Must be true to execute")] bool confirm = false)
     {
-        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err) || method == null)
             return new { error = err };
-        var m = method!;
+        var m = method;
         if (!m.HasBody)
             return new { error = "Method has no body" };
         if (!confirm)
@@ -112,9 +112,9 @@ public static class IlEditTools
         [Description("IL offset, e.g. 'IL_0042' / '0x42' / '66'")] string il_offset,
         [Description("Must be true to execute")] bool confirm = false)
     {
-        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err) || method == null)
             return new { error = err };
-        var m = method!;
+        var m = method;
         if (!m.HasBody) return new { error = "Method has no body" };
 
         if (!TryParseOffset(il_offset, out var offset))
@@ -146,9 +146,9 @@ public static class IlEditTools
         [Description("New opcode mnemonic")] string opcode,
         [Description("Must be true to execute")] bool confirm = false)
     {
-        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err))
+        if (!MethodTools.TryResolveMethod(bridge, assembly_name, method_full_name, out _, out var method, out var err) || method == null)
             return new { error = err };
-        var m = method!;
+        var m = method;
         if (!m.HasBody) return new { error = "Method has no body" };
         if (!TryParseOffset(il_offset, out var offset))
             return new { error = $"Bad offset format: {il_offset}" };
@@ -187,10 +187,10 @@ public static class IlEditTools
 
         if (target.Contains("::"))
         {
-            if (!MethodTools.TryResolveMethod(bridge, assembly_name, target, out _, out var method, out var err))
+            if (!MethodTools.TryResolveMethod(bridge, assembly_name, target, out _, out var method, out var err) || method == null)
                 return new { error = err };
             targetProvider = method;
-            targetName = method!.FullName;
+            targetName = method.FullName;
         }
         else
         {
