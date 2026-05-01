@@ -31,6 +31,16 @@ Embedding inside dnSpy gives access to capabilities that standalone tools cannot
 - **Tree view state** — know what the analyst is currently looking at
 - **Cross-references** — who calls what, call graph analysis via IL scanning
 
+## AI Chat Capabilities
+
+This extension now exposes an AI chat interface through MCP so an LLM can interact with the loaded dnSpy session.
+
+- Send prompts from Claude Code to dnSpy and receive assistant responses back in the chat history.
+- Automatically include the current selection in prompts when enabled.
+- The chat history is persisted between sessions and scrolls automatically as new responses arrive.
+- Each message includes a copy button so analysts can quickly copy assistant output to the clipboard.
+- The system can inspect loaded assemblies, selected nodes, decompiled code, and other dnSpy state to answer context-aware reverse engineering questions.
+
 ---
 
 ## Quick Start
