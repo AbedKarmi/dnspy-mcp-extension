@@ -165,6 +165,8 @@ Or manually edit `~/.config/claude/config.json`:
 }
 ```
 
+In dnSpy, you can now open `Help > MCP Server Setup` to copy the recommended `claude mcp add` command and the paste-ready JSON snippet.
+
 ### 7. Load a Sample and Analyze
 
 1. In dnSpy on Windows, open a .NET malware sample: **File > Open** or drag-and-drop
